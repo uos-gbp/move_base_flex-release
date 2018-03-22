@@ -1,7 +1,0 @@
-ros-kinetic-mbf-abstract-core (0.1.0-0jessie) jessie; urgency=high
-
-  * First release of move_base_flex for kinetic and lunar
-
- -- Sebastian Pütz <spuetz@uos.de>  Tue, 20 Mar 2018 23:00:00 -0000
-
-
