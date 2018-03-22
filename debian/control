@@ -1,0 +1,13 @@
+Source: ros-lunar-mbf-abstract-nav
+Section: misc
+Priority: extra
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-lunar-actionlib, ros-lunar-actionlib-msgs, ros-lunar-catkin, ros-lunar-dynamic-reconfigure, ros-lunar-geometry-msgs, ros-lunar-mbf-abstract-core, ros-lunar-mbf-msgs, ros-lunar-mbf-utility, ros-lunar-nav-msgs, ros-lunar-roscpp, ros-lunar-std-msgs, ros-lunar-std-srvs, ros-lunar-tf, ros-lunar-xmlrpcpp
+Homepage: http://wiki.ros.org/move_base_flex
+Standards-Version: 3.9.2
+
+Package: ros-lunar-mbf-abstract-nav
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-lunar-actionlib, ros-lunar-actionlib-msgs, ros-lunar-dynamic-reconfigure, ros-lunar-geometry-msgs, ros-lunar-mbf-abstract-core, ros-lunar-mbf-msgs, ros-lunar-mbf-utility, ros-lunar-nav-msgs, ros-lunar-roscpp, ros-lunar-std-msgs, ros-lunar-std-srvs, ros-lunar-tf, ros-lunar-xmlrpcpp
+Description: The mbf_abstract_nav package contains the abstract navigation server implementation of Move Base Flex (MBF).
+ The abstract navigation server is not bound to any map representation. It provides the actions for planning, controlling and recovering. MBF loads all defined plugins at the program start. Therefor, it loads all plugins which are defined in the lists *planners*, *controllers* and *recovery_behaviors*. Each list holds a pair of a *name* and a *type*. The *type* defines which kind of plugin to load. The *name* defines under which name the plugin should be callable by the actions.
