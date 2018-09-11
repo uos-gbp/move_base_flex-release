@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Sebastian Pütz
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,43 +30,62 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  wrapper_recovery_behavior.cpp
+ *  abstract_execution_base.cpp
  *
- *  authors:
- *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
- *    Jorge Santos Simón <santos@magazino.eu>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#include <mbf_msgs/RecoveryResult.h>
-#include "nav_core_wrapper/wrapper_recovery_behavior.h"
+#include "mbf_abstract_nav/abstract_execution_base.h"
 
-namespace mbf_nav_core_wrapper
-{
-void WrapperRecoveryBehavior::initialize(std::string name, tf::TransformListener *tf,
-                                         costmap_2d::Costmap2DROS *global_costmap,
-                                         costmap_2d::Costmap2DROS *local_costmap)
-{
-  nav_core_plugin_->initialize(name, tf, global_costmap, local_costmap);
-}
+namespace mbf_abstract_nav{
 
-uint32_t WrapperRecoveryBehavior::runBehavior(std::string& message)
-{
-  nav_core_plugin_->runBehavior();
-  // TODO return a code for old API
-  return mbf_msgs::RecoveryResult::SUCCESS;
-}
+  AbstractExecutionBase::AbstractExecutionBase(std::string name,
+                                               boost::function<void()> setup_fn,
+                                               boost::function<void()> cleanup_fn)
+    : outcome_(255), cancel_(false), name_(name), setup_fn_(setup_fn), cleanup_fn_(cleanup_fn)
+  {
+  }
 
-bool WrapperRecoveryBehavior::cancel()
-{
-  return false;
-}
+  bool AbstractExecutionBase::start()
+  {
+    //setState(STARTED); // TODO
+    thread_ = boost::thread(&AbstractExecutionBase::run, this);
+    return true;
+  }
 
-WrapperRecoveryBehavior::WrapperRecoveryBehavior(boost::shared_ptr<nav_core::RecoveryBehavior> plugin)
-    : nav_core_plugin_(plugin)
-{}
+  void AbstractExecutionBase::stop()
+  {
+    ROS_WARN_STREAM("Trying to stop the planning rigorously by interrupting the thread!");
+    thread_.interrupt();
+    //setState(STOPPED); // TODO
+  }
 
-WrapperRecoveryBehavior::~WrapperRecoveryBehavior()
-{}
+  void AbstractExecutionBase::join(){
+    thread_.join();
+  }
 
-};  /* namespace mbf_abstract_core */
+  void AbstractExecutionBase::waitForStateUpdate(boost::chrono::microseconds const &duration)
+  {
+    boost::mutex mutex;
+    boost::unique_lock<boost::mutex> lock(mutex);
+    condition_.wait_for(lock, duration);
+  }
+
+  uint32_t AbstractExecutionBase::getOutcome()
+  {
+    return outcome_;
+  }
+
+  std::string AbstractExecutionBase::getMessage()
+  {
+    return message_;
+  }
+
+  std::string AbstractExecutionBase::getName()
+  {
+    return name_;
+  }
+
+
+} /* namespace mbf_abstract_nav */
