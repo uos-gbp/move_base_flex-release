@@ -30,7 +30,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  wrapper_recovery_behavior.cpp
+ *  planner_action.h
  *
  *  authors:
  *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
@@ -38,35 +38,63 @@
  *
  */
 
-#include <mbf_msgs/RecoveryResult.h>
-#include "nav_core_wrapper/wrapper_recovery_behavior.h"
+#ifndef MBF_ABSTRACT_NAV__PLANNER_ACTION_H_
+#define MBF_ABSTRACT_NAV__PLANNER_ACTION_H_
 
-namespace mbf_nav_core_wrapper
+#include "mbf_abstract_nav/abstract_action.h"
+#include "mbf_abstract_nav/abstract_planner_execution.h"
+#include "mbf_abstract_nav/robot_information.h"
+#include <actionlib/server/action_server.h>
+#include <mbf_msgs/GetPathAction.h>
+
+namespace mbf_abstract_nav{
+
+
+class PlannerAction : public AbstractAction<mbf_msgs::GetPathAction, AbstractPlannerExecution>
 {
-void WrapperRecoveryBehavior::initialize(std::string name, tf::TransformListener *tf,
-                                         costmap_2d::Costmap2DROS *global_costmap,
-                                         costmap_2d::Costmap2DROS *local_costmap)
-{
-  nav_core_plugin_->initialize(name, tf, global_costmap, local_costmap);
+ public:
+
+  typedef boost::shared_ptr<PlannerAction> Ptr;
+
+  PlannerAction(
+      const std::string& name,
+      const RobotInformation &robot_info
+  );
+
+  void run(GoalHandle &goal_handle, AbstractPlannerExecution &execution);
+
+ protected:
+
+  /**
+   * @brief Publishes the given path / plan
+   * @param plan The plan, a list of stamped poses, to be published
+   */
+  void publishPath(std::vector<geometry_msgs::PoseStamped> &plan);
+
+  /**
+   * @brief Transforms a plan to the global frame (global_frame_) coord system.
+   * @param plan Input plan to be transformed.
+   * @param global_plan Output plan, which is then transformed to the global frame.
+   * @return true, if the transformation succeeded, false otherwise
+   */
+  bool transformPlanToGlobalFrame(std::vector<geometry_msgs::PoseStamped> &plan,
+                                  std::vector<geometry_msgs::PoseStamped> &global_plan);
+
+
+ private:
+
+  //! Publisher to publish the current goal pose, which is used for path planning
+  ros::Publisher current_goal_pub_;
+
+  //! Publisher to publish the current computed path
+  ros::Publisher path_pub_;
+
+  //! Path sequence counter
+  unsigned int path_seq_count_;
+};
+
+
 }
 
-uint32_t WrapperRecoveryBehavior::runBehavior(std::string& message)
-{
-  nav_core_plugin_->runBehavior();
-  // TODO return a code for old API
-  return mbf_msgs::RecoveryResult::SUCCESS;
-}
 
-bool WrapperRecoveryBehavior::cancel()
-{
-  return false;
-}
-
-WrapperRecoveryBehavior::WrapperRecoveryBehavior(boost::shared_ptr<nav_core::RecoveryBehavior> plugin)
-    : nav_core_plugin_(plugin)
-{}
-
-WrapperRecoveryBehavior::~WrapperRecoveryBehavior()
-{}
-
-};  /* namespace mbf_abstract_core */
+#endif //MBF_ABSTRACT_NAV__PLANNER_ACTION_H_
