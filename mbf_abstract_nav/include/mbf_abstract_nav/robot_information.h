@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Sebastian Pütz
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,43 +30,59 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  wrapper_recovery_behavior.cpp
+ *  robot_information.h
  *
- *  authors:
- *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
- *    Jorge Santos Simón <santos@magazino.eu>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#include <mbf_msgs/RecoveryResult.h>
-#include "nav_core_wrapper/wrapper_recovery_behavior.h"
+#ifndef MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_
+#define MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_
 
-namespace mbf_nav_core_wrapper
-{
-void WrapperRecoveryBehavior::initialize(std::string name, tf::TransformListener *tf,
-                                         costmap_2d::Costmap2DROS *global_costmap,
-                                         costmap_2d::Costmap2DROS *local_costmap)
-{
-  nav_core_plugin_->initialize(name, tf, global_costmap, local_costmap);
+#include <boost/shared_ptr.hpp>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <ros/duration.h>
+#include <string>
+#include <tf/transform_listener.h>
+
+
+namespace mbf_abstract_nav{
+
+class RobotInformation{
+
+ public:
+
+  typedef boost::shared_ptr<RobotInformation> Ptr;
+
+  RobotInformation(
+      tf::TransformListener &tf_listener,
+      const std::string &global_frame,
+      const std::string &robot_frame,
+      const ros::Duration &tf_timeout);
+
+  bool getRobotPose(geometry_msgs::PoseStamped &robot_pose) const;
+
+  bool getRobotVelocity(geometry_msgs::TwistStamped &robot_velocity, ros::Duration look_back_duration) const;
+
+  const std::string& getGlobalFrame() const;
+
+  const std::string& getRobotFrame() const;
+
+  const tf::TransformListener& getTransformListener() const;
+
+  const ros::Duration& getTfTimeout() const;
+
+ private:
+  const tf::TransformListener& tf_listener_;
+
+  const std::string &global_frame_;
+
+  const std::string &robot_frame_;
+
+  const ros::Duration &tf_timeout_;
+
+};
+
 }
-
-uint32_t WrapperRecoveryBehavior::runBehavior(std::string& message)
-{
-  nav_core_plugin_->runBehavior();
-  // TODO return a code for old API
-  return mbf_msgs::RecoveryResult::SUCCESS;
-}
-
-bool WrapperRecoveryBehavior::cancel()
-{
-  return false;
-}
-
-WrapperRecoveryBehavior::WrapperRecoveryBehavior(boost::shared_ptr<nav_core::RecoveryBehavior> plugin)
-    : nav_core_plugin_(plugin)
-{}
-
-WrapperRecoveryBehavior::~WrapperRecoveryBehavior()
-{}
-
-};  /* namespace mbf_abstract_core */
+#endif //MBF_ABSTRACT_NAV__ROBOT_INFORMATION_H_
