@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
+ *  Copyright 2018, Magazino GmbH, Sebastian Pütz, Jorge Santos Simón
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  move_base_controller_execution.h
+ *  costmap_controller_execution.h
  *
  *  authors:
  *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
@@ -42,6 +42,7 @@
 #define MBF_COSTMAP_NAV__COSTMAP_CONTROLLER_EXECUTION_H_
 
 #include <costmap_2d/costmap_2d_ros.h>
+#include <mbf_costmap_nav/MoveBaseFlexConfig.h>
 #include <mbf_costmap_core/costmap_controller.h>
 #include <mbf_abstract_nav/abstract_controller_execution.h>
 
@@ -66,9 +67,14 @@ public:
    * @param tf_listener_ptr Shared pointer to a common tf listener
    * @param costmap_ptr Shared pointer to the costmap.
    */
-  CostmapControllerExecution(boost::condition_variable &condition,
-                              const boost::shared_ptr<tf::TransformListener> &tf_listener_ptr,
-                              CostmapPtr &costmap_ptr);
+  CostmapControllerExecution(
+      const std::string name,
+      const mbf_costmap_core::CostmapController::Ptr &controller_ptr,
+      const boost::shared_ptr<tf::TransformListener> &tf_listener_ptr,
+      CostmapPtr &costmap_ptr,
+      const MoveBaseFlexConfig &config,
+      boost::function<void()> setup_fn,
+      boost::function<void()> cleanup_fn);
 
   /**
    * @brief Destructor
@@ -80,7 +86,11 @@ protected:
   /**
    * @brief Request plugin for a new velocity command. We override this method so we can lock the local costmap
    *        before calling the planner.
-   * @param vel_cmd_stamped current velocity command
+   * @param pose the current pose of the robot.
+   * @param velocity the current velocity of the robot.
+   * @param cmd_vel Will be filled with the velocity command to be passed to the robot base.
+   * @param message Optional more detailed outcome as a string.
+   * @return Result code as described on ExePath action result and plugin's header.
    */
   virtual uint32_t computeVelocityCmd(
       const geometry_msgs::PoseStamped& robot_pose,
@@ -90,25 +100,7 @@ protected:
 
 private:
 
-  /**
-   * @brief Loads the plugin associated with the given controller type parameter
-   * @param controller_type The type of the controller plugin
-   * @return A shared pointer to a new loaded controller, if the controller plugin was loaded successfully,
-   *         an empty pointer otherwise.
-   */
-  virtual mbf_abstract_core::AbstractController::Ptr loadControllerPlugin(const std::string& controller_type);
-
-  /**
-   * @brief Initializes the controller plugin with its name, a pointer to the TransformListener
-   *        and pointer to the costmap
-   * @param name The name of the controller
-   * @param controller_ptr pointer to the controller object which corresponds to the name param
-   * @return true if init succeeded, false otherwise
-   */
-  virtual bool initPlugin(
-      const std::string& name,
-      const mbf_abstract_core::AbstractController::Ptr& controller_ptr
-  );
+  mbf_abstract_nav::MoveBaseFlexConfig toAbstract(const MoveBaseFlexConfig &config);
 
   //! costmap for 2d navigation planning
   CostmapPtr &costmap_ptr_;
