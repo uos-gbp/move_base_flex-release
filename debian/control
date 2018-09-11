@@ -1,0 +1,13 @@
+Source: ros-kinetic-mbf-msgs
+Section: misc
+Priority: extra
+Maintainer: Jorge Santos <santos@magazino.eu>
+Build-Depends: debhelper (>= 9.0.0), ros-kinetic-actionlib-msgs, ros-kinetic-catkin, ros-kinetic-genmsg, ros-kinetic-geometry-msgs, ros-kinetic-message-generation, ros-kinetic-message-runtime, ros-kinetic-nav-msgs, ros-kinetic-std-msgs
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-mbf-msgs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-kinetic-actionlib-msgs, ros-kinetic-geometry-msgs, ros-kinetic-message-runtime, ros-kinetic-nav-msgs, ros-kinetic-std-msgs
+Description: The move_base_flex messages package providing the action definition files for the action GetPath, ExePath, Recovery and MoveBase.
+ The action servers providing these action are implemented in mbf_abstract_nav.
