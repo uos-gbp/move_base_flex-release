@@ -1,3 +1,34 @@
+## move_base_flex (indigo) - 0.2.1-0
+
+The packages in the `move_base_flex` repository were released into the `indigo` distro by running `/usr/bin/bloom-release --rosdistro indigo --track indigo move_base_flex --edit` on `Wed, 03 Oct 2018 18:41:14 -0000`
+
+These packages were released:
+- `mbf_abstract_core`
+- `mbf_abstract_nav`
+- `mbf_costmap_core`
+- `mbf_costmap_nav`
+- `mbf_msgs`
+- `mbf_simple_nav`
+- `mbf_utility`
+- `move_base_flex`
+
+Version of package(s) in repository `move_base_flex`:
+
+- upstream repository: https://github.com/magazino/move_base_flex.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.2.1-0`
+
+Versions of tools used:
+
+- bloom version: `0.6.7`
+- catkin_pkg version: `0.4.8`
+- rosdep version: `0.12.2`
+- rosdistro version: `0.6.9`
+- vcstools version: `0.1.40`
+
+
 ## move_base_flex (melodic) - 0.2.1-0
 
 The packages in the `move_base_flex` repository were released into the `melodic` distro by running `/usr/bin/bloom-release --rosdistro melodic --track melodic move_base_flex --edit` on `Wed, 03 Oct 2018 18:30:56 -0000`
