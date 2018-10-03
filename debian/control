@@ -1,0 +1,13 @@
+Source: ros-indigo-mbf-msgs
+Section: misc
+Priority: extra
+Maintainer: Jorge Santos <santos@magazino.eu>
+Build-Depends: debhelper (>= 9.0.0), ros-indigo-actionlib-msgs, ros-indigo-catkin, ros-indigo-genmsg, ros-indigo-geometry-msgs, ros-indigo-message-generation, ros-indigo-message-runtime, ros-indigo-nav-msgs, ros-indigo-std-msgs
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-indigo-mbf-msgs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-indigo-actionlib-msgs, ros-indigo-geometry-msgs, ros-indigo-message-runtime, ros-indigo-nav-msgs, ros-indigo-std-msgs
+Description: The move_base_flex messages package providing the action definition files for the action GetPath, ExePath, Recovery and MoveBase.
+ The action servers providing these action are implemented in mbf_abstract_nav.
