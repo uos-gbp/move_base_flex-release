@@ -16,6 +16,8 @@ find_package(catkin REQUIRED
   std_msgs
   std_srvs
   tf
+  tf2
+  tf2_ros
   )
 
 find_package(Boost COMPONENTS thread chrono REQUIRED)
@@ -40,6 +42,8 @@ catkin_package(
   std_msgs
   std_srvs
   tf
+  tf2
+  tf2_ros
   DEPENDS Boost
 )
 
