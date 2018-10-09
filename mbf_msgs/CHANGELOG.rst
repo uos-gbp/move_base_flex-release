@@ -2,6 +2,10 @@
 Changelog for package mbf_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.2.2 (2018-10-10)
+------------------
+* Add outcome and message to the action's feedback in ExePath and MoveBase
+
 0.2.1 (2018-10-03)
 ------------------
 
