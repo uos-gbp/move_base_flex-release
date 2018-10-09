@@ -1,0 +1,26 @@
+ros-lunar-mbf-utility (0.2.2-0xenial) xenial; urgency=high
+
+
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 09 Oct 2018 11:00:00 -0000
+
+ros-lunar-mbf-utility (0.2.1-0xenial) xenial; urgency=high
+
+  * Make MBF melodic and indigo compatible
+  * Fix GoalHandle references bug in callbacks
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 02 Oct 2018 11:00:00 -0000
+
+ros-lunar-mbf-utility (0.2.0-0xenial) xenial; urgency=high
+
+  * Update copyright and 3-clause-BSD license
+
+ -- Sebastian Pütz <spuetz@uos.de>  Mon, 10 Sep 2018 12:00:00 -0000
+
+ros-lunar-mbf-utility (0.1.0-0xenial) xenial; urgency=high
+
+  * First release of move_base_flex for kinetic and lunar
+
+ -- Sebastian Pütz <spuetz@uos.de>  Wed, 21 Mar 2018 11:00:00 -0000
+
+
