@@ -1,0 +1,13 @@
+Source: ros-lunar-mbf-msgs
+Section: misc
+Priority: extra
+Maintainer: Jorge Santos <santos@magazino.eu>
+Build-Depends: debhelper (>= 9.0.0), ros-lunar-actionlib-msgs, ros-lunar-catkin, ros-lunar-genmsg, ros-lunar-geometry-msgs, ros-lunar-message-generation, ros-lunar-message-runtime, ros-lunar-nav-msgs, ros-lunar-std-msgs
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-lunar-mbf-msgs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-lunar-actionlib-msgs, ros-lunar-geometry-msgs, ros-lunar-message-runtime, ros-lunar-nav-msgs, ros-lunar-std-msgs
+Description: The move_base_flex messages package providing the action definition files for the action GetPath, ExePath, Recovery and MoveBase.
+ The action servers providing these action are implemented in mbf_abstract_nav.
