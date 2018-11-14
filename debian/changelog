@@ -1,0 +1,34 @@
+ros-indigo-move-base-flex (0.2.3-0trusty) trusty; urgency=high
+
+
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 13 Nov 2018 11:00:00 -0000
+
+ros-indigo-move-base-flex (0.2.2-0trusty) trusty; urgency=high
+
+
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 09 Oct 2018 11:00:00 -0000
+
+ros-indigo-move-base-flex (0.2.1-0trusty) trusty; urgency=high
+
+
+
+ -- Sebastian Pütz <spuetz@uos.de>  Tue, 02 Oct 2018 11:00:00 -0000
+
+ros-indigo-move-base-flex (0.2.0-0trusty) trusty; urgency=high
+
+  * Update copyright and 3-clause-BSD license of the Move Base Flex stack
+  * Concurrency for planners, controllers and recovery behaviors
+  * New class structure, allowing multiple executoin instances
+  * Fixes minor bugs
+
+ -- Sebastian Pütz <spuetz@uos.de>  Mon, 10 Sep 2018 12:00:00 -0000
+
+ros-indigo-move-base-flex (0.1.0-0trusty) trusty; urgency=high
+
+  * First release of move_base_flex for kinetic and lunar
+
+ -- Sebastian Pütz <spuetz@uos.de>  Wed, 21 Mar 2018 11:00:00 -0000
+
+
