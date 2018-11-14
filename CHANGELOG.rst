@@ -2,7 +2,7 @@
 Changelog for package mbf_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.2.2 (2018-10-10)
+0.2.3 (2018-11-14)
 ------------------
 * Add outcome and message to the action's feedback in ExePath and MoveBase
 
@@ -17,3 +17,4 @@ Changelog for package mbf_msgs
 0.1.0 (2018-03-22)
 ------------------
 * First release of move_base_flex for kinetic and lunar
+ca
