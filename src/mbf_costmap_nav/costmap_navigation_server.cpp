@@ -65,27 +65,22 @@ CostmapNavigationServer::CostmapNavigationServer(const TFPtr &tf_listener_ptr) :
   nav_core_planner_plugin_loader_("nav_core", "nav_core::BaseGlobalPlanner"),
   global_costmap_ptr_(new costmap_2d::Costmap2DROS("global_costmap", *tf_listener_ptr_)),
   local_costmap_ptr_(new costmap_2d::Costmap2DROS("local_costmap", *tf_listener_ptr_)),
-  setup_reconfigure_(false), shutdown_costmaps_(false)
+  setup_reconfigure_(false), shutdown_costmaps_(false), costmaps_users_(0)
 {
   // even if shutdown_costmaps is a dynamically reconfigurable parameter, we
   // need it here to decide whether to start or not the costmaps on starting up
   private_nh_.param("shutdown_costmaps", shutdown_costmaps_, false);
 
-  // initialize costmaps (stopped if shutdown_costmaps is true)
-  if (!shutdown_costmaps_)
-  {
-    local_costmap_active_ = true;
-    global_costmap_active_ = true;
-  }
-  else
+  // initialize costmaps stopped if shutdown_costmaps is true
+  if (shutdown_costmaps_)
   {
     local_costmap_ptr_->stop();
     global_costmap_ptr_->stop();
-    local_costmap_active_ = false;
-    global_costmap_active_ = false;
   }
 
   // advertise services and current goal topic
+  check_point_cost_srv_ = private_nh_.advertiseService("check_point_cost",
+                                                       &CostmapNavigationServer::callServiceCheckPointCost, this);
   check_pose_cost_srv_ = private_nh_.advertiseService("check_pose_cost",
                                                       &CostmapNavigationServer::callServiceCheckPoseCost, this);
   check_path_cost_srv_ = private_nh_.advertiseService("check_path_cost",
@@ -341,8 +336,6 @@ CostmapNavigationServer::~CostmapNavigationServer()
 
 void CostmapNavigationServer::reconfigure(mbf_costmap_nav::MoveBaseFlexConfig &config, uint32_t level)
 {
-  boost::recursive_mutex::scoped_lock sl(configuration_mutex_);
-
   // Make sure we have the original configuration the first time we're called, so we can restore it if needed
   if (!setup_reconfigure_)
   {
@@ -389,6 +382,84 @@ void CostmapNavigationServer::reconfigure(mbf_costmap_nav::MoveBaseFlexConfig &c
   }
 
   last_config_ = config;
+}
+
+bool CostmapNavigationServer::callServiceCheckPointCost(mbf_msgs::CheckPoint::Request &request,
+                                                        mbf_msgs::CheckPoint::Response &response)
+{
+  // selecting the requested costmap
+  CostmapPtr costmap;
+  std::string costmap_name;
+  switch (request.costmap)
+  {
+    case mbf_msgs::CheckPoint::Request::LOCAL_COSTMAP:
+      costmap = local_costmap_ptr_;
+      costmap_name = "local costmap";
+      break;
+    case mbf_msgs::CheckPoint::Request::GLOBAL_COSTMAP:
+      costmap = global_costmap_ptr_;
+      costmap_name = "global costmap";
+      break;
+    default:
+      ROS_ERROR_STREAM("No valid costmap provided; options are "
+                           << mbf_msgs::CheckPoint::Request::LOCAL_COSTMAP << ": local costmap, "
+                           << mbf_msgs::CheckPoint::Request::GLOBAL_COSTMAP << ": global costmap");
+      return false;
+  }
+
+  // get target point as x, y coordinates
+  std::string costmap_frame = costmap->getGlobalFrameID();
+
+  geometry_msgs::PointStamped point;
+  if (! mbf_utility::transformPoint(*tf_listener_ptr_, costmap_frame, request.point.header.stamp,
+                                     ros::Duration(0.5), request.point, global_frame_, point))
+  {
+    ROS_ERROR_STREAM("Transform target point to " << costmap_name << " frame '" << costmap_frame << "' failed");
+    return false;
+  }
+
+  double x = point.point.x;
+  double y = point.point.y;
+
+  // ensure costmaps are active so cost reflects latest sensor readings
+  checkActivateCostmaps();
+  unsigned int mx, my;
+  if (!costmap->getCostmap()->worldToMap(x, y, mx, my))
+  {
+    // point is outside of the map
+    response.state = static_cast<uint8_t>(mbf_msgs::CheckPoint::Response::OUTSIDE);
+    ROS_DEBUG_STREAM("Point [" << x << ", " << y << "] is outside the map (cost = " << response.cost << ")");
+  }
+  else
+  {
+    // lock costmap so content doesn't change while checking cell costs
+    boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(costmap->getCostmap()->getMutex()));
+
+    // get cost of cell under point and classify as one of the states: UNKNOWN, LETHAL, INSCRIBED, FREE
+    response.cost = costmap->getCostmap()->getCost(mx, my);
+    switch (response.cost)
+    {
+      case costmap_2d::NO_INFORMATION:
+        response.state = static_cast<uint8_t>(mbf_msgs::CheckPoint::Response::UNKNOWN);
+        ROS_DEBUG_STREAM("Point [" << x << ", " << y << "] is in unknown space! (cost = " << response.cost << ")");
+        break;
+      case costmap_2d::LETHAL_OBSTACLE:
+        response.state = static_cast<uint8_t>(mbf_msgs::CheckPoint::Response::LETHAL);
+        ROS_DEBUG_STREAM("Point [" << x << ", " << y << "] is in collision! (cost = " << response.cost << ")");
+        break;
+      case costmap_2d::INSCRIBED_INFLATED_OBSTACLE:
+        response.state = static_cast<uint8_t>(mbf_msgs::CheckPoint::Response::INSCRIBED);
+        ROS_DEBUG_STREAM("Point [" << x << ", " << y << "] is near an obstacle (cost = " << response.cost << ")");
+        break;
+      default:
+        response.state = static_cast<uint8_t>(mbf_msgs::CheckPoint::Response::FREE);
+        ROS_DEBUG_STREAM("Point [" << x << ", " << y << "] is free (cost = " << response.cost << ")");
+        break;
+    }
+  }
+
+  checkDeactivateCostmaps();
+  return true;
 }
 
 bool CostmapNavigationServer::callServiceCheckPoseCost(mbf_msgs::CheckPose::Request &request,
@@ -661,8 +732,14 @@ bool CostmapNavigationServer::callServiceCheckPathCost(mbf_msgs::CheckPath::Requ
 bool CostmapNavigationServer::callServiceClearCostmaps(std_srvs::Empty::Request &request,
                                                        std_srvs::Empty::Response &response)
 {
+  //clear both costmaps
+  local_costmap_ptr_->getCostmap()->getMutex()->lock();
   local_costmap_ptr_->resetLayers();
+  local_costmap_ptr_->getCostmap()->getMutex()->unlock();
+
+  global_costmap_ptr_->getCostmap()->getMutex()->lock();
   global_costmap_ptr_->resetLayers();
+  global_costmap_ptr_->getCostmap()->getMutex()->unlock();
   return true;
 }
 
@@ -674,25 +751,19 @@ void CostmapNavigationServer::checkActivateCostmaps()
 
   // Activate costmaps if we shutdown them when not moving and they are not already active. This method must be
   // synchronized because start costmap can take up to 1/update freq., and concurrent calls to it can lead to segfaults
-  if (shutdown_costmaps_ && !local_costmap_active_)
+  if (shutdown_costmaps_ && !costmaps_users_)
   {
     local_costmap_ptr_->start();
-    local_costmap_active_ = true;
-    ROS_DEBUG_STREAM("Local costmap activated.");
-  }
-
-  if (shutdown_costmaps_ && !global_costmap_active_)
-  {
     global_costmap_ptr_->start();
-    global_costmap_active_ = true;
-    ROS_DEBUG_STREAM("Global costmap activated.");
+    ROS_DEBUG_STREAM("Costmaps activated.");
   }
+  ++costmaps_users_;
 }
 
 void CostmapNavigationServer::checkDeactivateCostmaps()
 {
-  if (shutdown_costmaps_ &&
-      ((local_costmap_active_ || global_costmap_active_)))
+  --costmaps_users_;
+  if (shutdown_costmaps_ && !costmaps_users_)
   {
     // Delay costmaps shutdown by shutdown_costmaps_delay so we don't need to enable at each step of a normal
     // navigation sequence, what is terribly inefficient; the timer is stopped on costmaps re-activation and
@@ -706,12 +777,10 @@ void CostmapNavigationServer::deactivateCostmaps(const ros::TimerEvent &event)
 {
   boost::mutex::scoped_lock sl(check_costmaps_mutex_);
 
+  ROS_ASSERT_MSG(!costmaps_users_, "Deactivating costmaps with %u active users!", costmaps_users_);
   local_costmap_ptr_->stop();
-  local_costmap_active_ = false;
-  ROS_DEBUG_STREAM("Local costmap deactivated.");
   global_costmap_ptr_->stop();
-  global_costmap_active_ = false;
-  ROS_DEBUG_STREAM("Global costmap deactivated.");
+  ROS_DEBUG_STREAM("Costmaps deactivated.");
 }
 
 } /* namespace mbf_costmap_nav */
