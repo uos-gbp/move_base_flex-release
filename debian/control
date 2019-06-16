@@ -1,0 +1,13 @@
+Source: ros-kinetic-mbf-simple-nav
+Section: misc
+Priority: extra
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-kinetic-actionlib, ros-kinetic-actionlib-msgs, ros-kinetic-catkin, ros-kinetic-dynamic-reconfigure, ros-kinetic-geometry-msgs, ros-kinetic-mbf-abstract-core, ros-kinetic-mbf-abstract-nav, ros-kinetic-mbf-msgs, ros-kinetic-nav-msgs, ros-kinetic-pluginlib, ros-kinetic-roscpp, ros-kinetic-std-msgs, ros-kinetic-std-srvs, ros-kinetic-tf, ros-kinetic-tf2, ros-kinetic-tf2-ros
+Homepage: http://wiki.ros.org/move_base_flex
+Standards-Version: 3.9.2
+
+Package: ros-kinetic-mbf-simple-nav
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-kinetic-actionlib, ros-kinetic-actionlib-msgs, ros-kinetic-dynamic-reconfigure, ros-kinetic-geometry-msgs, ros-kinetic-mbf-abstract-core, ros-kinetic-mbf-abstract-nav, ros-kinetic-mbf-msgs, ros-kinetic-nav-msgs, ros-kinetic-pluginlib, ros-kinetic-roscpp, ros-kinetic-std-msgs, ros-kinetic-std-srvs, ros-kinetic-tf, ros-kinetic-tf2, ros-kinetic-tf2-ros
+Description: The mbf_simple_nav package contains a simple navigation server implementation of Move Base Flex (MBF).
+ The simple navigation server is bound to no map representation. It provides actions for planning, controlling and recovering. MBF loads all defined plugins which are defined in the lists *planners*, *controllers* and *recovery_behaviors*. Each list holds a pair of a *name* and a *type*. The *type* defines which kind of plugin to load. The *name* defines under which name the plugin should be callable by the actions. It tries to load the defined plugins which implements the defined interfaces in mbf_abstract_core.
