@@ -49,8 +49,9 @@
 
 #include <mbf_costmap_nav/MoveBaseFlexConfig.h>
 #include <std_srvs/Empty.h>
-#include <mbf_msgs/CheckPose.h>
 #include <mbf_msgs/CheckPath.h>
+#include <mbf_msgs/CheckPose.h>
+#include <mbf_msgs/CheckPoint.h>
 
 #include <nav_core/base_global_planner.h>
 #include <nav_core/base_local_planner.h>
@@ -184,6 +185,15 @@ private:
   void deactivateCostmaps(const ros::TimerEvent &event);
 
   /**
+   * @brief Callback method for the check_point_cost service
+   * @param request Request object, see the mbf_msgs/CheckPoint service definition file.
+   * @param response Response object, see the mbf_msgs/CheckPoint service definition file.
+   * @return true, if the service completed successfully, false otherwise
+   */
+  bool callServiceCheckPointCost(mbf_msgs::CheckPoint::Request &request,
+                                 mbf_msgs::CheckPoint::Response &response);
+
+  /**
    * @brief Callback method for the check_pose_cost service
    * @param request Request object, see the mbf_msgs/CheckPose service definition file.
    * @param response Response object, see the mbf_msgs/CheckPose service definition file.
@@ -241,11 +251,8 @@ private:
   //! Shared pointer to the common global costmap
   CostmapPtr global_costmap_ptr_;
 
-  //! true, if the local costmap is active
-  bool local_costmap_active_;
-
-  //! true, if the global costmap is active
-  bool global_costmap_active_;
+  //! Service Server for the check_point_cost service
+  ros::ServiceServer check_point_cost_srv_;
 
   //! Service Server for the check_pose_cost service
   ros::ServiceServer check_pose_cost_srv_;
@@ -258,8 +265,9 @@ private:
 
   //! Stop updating costmaps when not planning or controlling, if true
   bool shutdown_costmaps_;
-  ros::Timer shutdown_costmaps_timer_;    //!< delayed shutdown timer
-  ros::Duration shutdown_costmaps_delay_; //!< delayed shutdown delay
+  uint16_t costmaps_users_;               //!< keep track of plugins using costmaps
+  ros::Timer shutdown_costmaps_timer_;    //!< costmpas delayed shutdown timer
+  ros::Duration shutdown_costmaps_delay_; //!< costmpas delayed shutdown delay
 
   //! Start/stop costmaps mutex; concurrent calls to start can lead to segfault
   boost::mutex check_costmaps_mutex_;
