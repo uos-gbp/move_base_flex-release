@@ -1,0 +1,40 @@
+ros-melodic-mbf-msgs (0.2.5-1bionic) bionic; urgency=high
+
+
+
+ -- Jorge Santos <santos@magazino.eu>  Thu, 10 Oct 2019 22:00:00 -0000
+
+ros-melodic-mbf-msgs (0.2.4-1bionic) bionic; urgency=high
+
+  * Add check_point_cost service
+  * Change current_twist for last_cmd_vel on exe_path/feedback
+
+ -- Jorge Santos <santos@magazino.eu>  Sat, 15 Jun 2019 22:00:00 -0000
+
+ros-melodic-mbf-msgs (0.2.3-1bionic) bionic; urgency=high
+
+  * Add outcome and message to the action's feedback in ExePath and MoveBase
+
+ -- Jorge Santos <santos@magazino.eu>  Tue, 13 Nov 2018 23:00:00 -0000
+
+ros-melodic-mbf-msgs (0.2.1-1bionic) bionic; urgency=high
+
+
+
+ -- Jorge Santos <santos@magazino.eu>  Tue, 02 Oct 2018 22:00:00 -0000
+
+ros-melodic-mbf-msgs (0.2.0-1bionic) bionic; urgency=high
+
+  * Concurrency for planners, controllers and recovery behaviors
+  * Adds concurrency slots to actions
+
+ -- Jorge Santos <santos@magazino.eu>  Mon, 10 Sep 2018 22:00:00 -0000
+
+ros-melodic-mbf-msgs (0.1.0-1bionic) bionic; urgency=high
+
+  * First release of move_base_flex for kinetic and lunar
+  ca
+
+ -- Jorge Santos <santos@magazino.eu>  Wed, 21 Mar 2018 23:00:00 -0000
+
+
