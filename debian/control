@@ -1,0 +1,13 @@
+Source: ros-melodic-mbf-simple-nav
+Section: misc
+Priority: extra
+Maintainer: Sebastian Pütz <spuetz@uos.de>
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-catkin, ros-melodic-dynamic-reconfigure, ros-melodic-geometry-msgs, ros-melodic-mbf-abstract-core, ros-melodic-mbf-abstract-nav, ros-melodic-mbf-msgs, ros-melodic-nav-msgs, ros-melodic-pluginlib, ros-melodic-roscpp, ros-melodic-std-msgs, ros-melodic-std-srvs, ros-melodic-tf, ros-melodic-tf2, ros-melodic-tf2-ros
+Homepage: http://wiki.ros.org/move_base_flex
+Standards-Version: 3.9.2
+
+Package: ros-melodic-mbf-simple-nav
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-dynamic-reconfigure, ros-melodic-geometry-msgs, ros-melodic-mbf-abstract-core, ros-melodic-mbf-abstract-nav, ros-melodic-mbf-msgs, ros-melodic-nav-msgs, ros-melodic-pluginlib, ros-melodic-roscpp, ros-melodic-std-msgs, ros-melodic-std-srvs, ros-melodic-tf, ros-melodic-tf2, ros-melodic-tf2-ros
+Description: The mbf_simple_nav package contains a simple navigation server implementation of Move Base Flex (MBF).
+ The simple navigation server is bound to no map representation. It provides actions for planning, controlling and recovering. MBF loads all defined plugins which are defined in the lists *planners*, *controllers* and *recovery_behaviors*. Each list holds a pair of a *name* and a *type*. The *type* defines which kind of plugin to load. The *name* defines under which name the plugin should be callable by the actions. It tries to load the defined plugins which implements the defined interfaces in mbf_abstract_core.
