@@ -59,6 +59,7 @@
 
 namespace mbf_abstract_nav
 {
+
 /**
  * @defgroup controller_execution Controller Execution Classes
  * @brief The controller execution classes are derived from the AbstractControllerExecution and extends the
@@ -223,6 +224,9 @@ namespace mbf_abstract_nav
     //! The time the controller has been started.
     ros::Time start_time_;
 
+    //! The time the controller responded with a success output (output < 10).
+    ros::Time last_valid_cmd_time_;
+
     //! The maximum number of retries
     int max_retries_;
 
@@ -331,6 +335,12 @@ namespace mbf_abstract_nav
 
     //! whether move base flex should check for the goal tolerance or not.
     bool mbf_tolerance_check_;
+
+    //! whether move base flex should force the robot to stop once the goal is reached.
+    bool force_stop_at_goal_;
+
+    //! whether move base flex should force the robot to stop on canceling navigation.
+    bool force_stop_on_cancel_;
 
     //! distance tolerance to the given goal pose
     double dist_tolerance_;
