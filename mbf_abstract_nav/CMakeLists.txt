@@ -18,7 +18,7 @@ find_package(catkin REQUIRED
   xmlrpcpp
   )
 
-find_package(Boost COMPONENTS thread chrono exception REQUIRED)
+find_package(Boost COMPONENTS thread chrono REQUIRED)
 
 # dynamic reconfigure: we provide the abstract configuration common to all MBF-based navigation
 # frameworks in a python module, so it can easily be included in particular navigation flavours
@@ -58,7 +58,7 @@ include_directories(
 )
 
 add_library(${MBF_ABSTRACT_SERVER_LIB}
-  src/robot_Information.cpp
+  src/robot_information.cpp
   src/controller_action.cpp
   src/planner_action.cpp
   src/recovery_action.cpp
