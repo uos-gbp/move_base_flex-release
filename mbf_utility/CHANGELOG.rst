@@ -2,6 +2,11 @@
 Changelog for package mbf_utility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.0 (2020-03-31)
+------------------
+* Add exception classes for get_path, exe_path and recovery
+* unify license declaration to BSD-3
+
 0.2.5 (2019-10-11)
 ------------------
 
