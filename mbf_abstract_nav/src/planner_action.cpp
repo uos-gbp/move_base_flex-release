@@ -42,12 +42,13 @@
 
 #include "mbf_abstract_nav/planner_action.h"
 
-namespace mbf_abstract_nav{
+namespace mbf_abstract_nav
+{
 
 PlannerAction::PlannerAction(
     const std::string &name,
     const RobotInformation &robot_info)
-  : AbstractAction(name, robot_info, boost::bind(&mbf_abstract_nav::PlannerAction::run, this, _1, _2)), path_seq_count_(0)
+  : AbstractActionBase(name, robot_info, boost::bind(&mbf_abstract_nav::PlannerAction::run, this, _1, _2)), path_seq_count_(0)
 {
   ros::NodeHandle private_nh("~");
   // informative topics: current navigation goal
@@ -150,7 +151,6 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
           {
             ROS_WARN_STREAM_THROTTLE_NAMED(2.0, name_, "Cancel planning failed or is not supported; "
                 "must wait until current plan finish!");
-            execution.stop(); // try to interrupt planning.
           }
         }
         else
@@ -287,4 +287,3 @@ bool PlannerAction::transformPlanToGlobalFrame(
 }
 
 } /* namespace mbf_abstract_nav */
-
