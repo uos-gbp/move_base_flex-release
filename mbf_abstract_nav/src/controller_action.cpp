@@ -40,13 +40,13 @@
 
 #include "mbf_abstract_nav/controller_action.h"
 
-namespace mbf_abstract_nav{
-
+namespace mbf_abstract_nav
+{
 
 ControllerAction::ControllerAction(
     const std::string &action_name,
     const RobotInformation &robot_info)
-    : AbstractAction(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2))
+    : AbstractActionBase(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2))
 {
 }
 
@@ -89,8 +89,8 @@ void ControllerAction::start(
   slot_map_mtx_.unlock();
   if(!update_plan)
   {
-      // Otherwise run parent version of this method
-      AbstractAction::start(goal_handle, execution_ptr);
+    // Otherwise run parent version of this method
+    AbstractActionBase::start(goal_handle, execution_ptr);
   }
 }
 
@@ -184,8 +184,11 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
         break;
 
       case AbstractControllerExecution::STOPPED:
-        ROS_WARN_STREAM_NAMED(name_, "The controller has been stopped!");
+        ROS_WARN_STREAM_NAMED(name_, "The controller has been stopped rigorously!");
         controller_active = false;
+        result.outcome = mbf_msgs::ExePathResult::STOPPED;
+        result.message = "Controller has been stopped!";
+        goal_handle.setAborted(result, result.message);
         break;
 
       case AbstractControllerExecution::CANCELED:
@@ -199,18 +202,18 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
         ROS_DEBUG_STREAM_NAMED(name_, "The moving has been started!");
         break;
 
-        // in progress
       case AbstractControllerExecution::PLANNING:
         if (execution.isPatienceExceeded())
         {
-          ROS_INFO_STREAM_NAMED(name_, "The controller patience has been exceeded! Stopping controller...");
-          // TODO planner is stuck, but we don't have currently any way to cancel it!
-          // We will try to stop the thread, but does nothing with DWA, TR or TEB controllers
-          // Note that this is not the same situation as in case AbstractControllerExecution::PAT_EXCEEDED,
-          // as there is the controller itself reporting that it cannot find a valid command after trying
-          // for more than patience seconds. But after stopping controller execution, it should ideally
-          // report PAT_EXCEEDED as his state on next iteration.
-          execution.stop();
+          ROS_INFO_STREAM("Try to cancel the plugin \"" << name_ << "\" after the patience time has been exceeded!");
+          if(execution.cancel())
+          {
+            ROS_INFO_STREAM("Successfully canceled the plugin \"" << name_ << "\" after the patience time has been exceeded!");
+          }
+          else
+          {
+            ROS_WARN_STREAM_THROTTLE(3, "Could not cancel the plugin \"" << name_ << "\" after the patience time has been exceeded!");
+          }
         }
         break;
 
@@ -268,7 +271,8 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
           {
             ROS_WARN_STREAM_NAMED(name_, "The controller is oscillating for "
                 << (ros::Time::now() - last_oscillation_reset).toSec() << "s");
-            execution.stop();
+
+            execution.cancel();
             controller_active = false;
             fillExePathResult(mbf_msgs::ExePathResult::OSCILLATION, "Oscillation detected!", result);
             goal_handle.setAborted(result, result.message);
@@ -355,5 +359,4 @@ void ControllerAction::fillExePathResult(
   result.angle_to_goal = static_cast<float>(mbf_utility::angle(robot_pose_, goal_pose_));
 }
 
-}
-
+} /* mbf_abstract_nav */
