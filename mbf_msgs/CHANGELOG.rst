@@ -2,6 +2,11 @@
 Changelog for package mbf_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.2 (2020-05-25)
+------------------
+* add impassable outcome code for recovery behaviors
+* enable different goal tolerance values for each action 
+
 0.3.1 (2020-04-07)
 ------------------
 
