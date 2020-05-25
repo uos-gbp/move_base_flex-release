@@ -66,17 +66,21 @@ void ControllerAction::start(
   bool update_plan = false;
   slot_map_mtx_.lock();
   std::map<uint8_t, ConcurrencySlot>::iterator slot_it = concurrency_slots_.find(slot);
-  if(slot_it != concurrency_slots_.end())
+  if(slot_it != concurrency_slots_.end() && slot_it->second.in_use)
   {
     boost::lock_guard<boost::mutex> goal_guard(goal_mtx_);
     if(slot_it->second.execution->getName() == goal_handle.getGoal()->controller ||
        goal_handle.getGoal()->controller.empty())
     {
       update_plan = true;
-      // Goal requests to run the same controller on the same concurrency slot:
-      // we update the goal handle and pass the new plan to the execution without stopping it
+      // Goal requests to run the same controller on the same concurrency slot already in use:
+      // we update the goal handle and pass the new plan and tolerances from the action to the
+      // execution without stopping it
       execution_ptr = slot_it->second.execution;
-      execution_ptr->setNewPlan(goal_handle.getGoal()->path.poses);
+      execution_ptr->setNewPlan(goal_handle.getGoal()->path.poses,
+                                goal_handle.getGoal()->tolerance_from_action,
+                                goal_handle.getGoal()->dist_tolerance,
+                                goal_handle.getGoal()->angle_tolerance);
       // Update also goal pose, so the feedback remains consistent
       goal_pose_ = goal_handle.getGoal()->path.poses.back();
       mbf_msgs::ExePathResult result;
@@ -179,7 +183,7 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
     switch (state_moving_input)
     {
       case AbstractControllerExecution::INITIALIZED:
-        execution.setNewPlan(plan);
+        execution.setNewPlan(plan, goal.tolerance_from_action, goal.dist_tolerance, goal.angle_tolerance);
         execution.start();
         break;
 
@@ -206,13 +210,9 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
         if (execution.isPatienceExceeded())
         {
           ROS_INFO_STREAM("Try to cancel the plugin \"" << name_ << "\" after the patience time has been exceeded!");
-          if(execution.cancel())
+          if (execution.cancel())
           {
             ROS_INFO_STREAM("Successfully canceled the plugin \"" << name_ << "\" after the patience time has been exceeded!");
-          }
-          else
-          {
-            ROS_WARN_STREAM_THROTTLE(3, "Could not cancel the plugin \"" << name_ << "\" after the patience time has been exceeded!");
           }
         }
         break;
