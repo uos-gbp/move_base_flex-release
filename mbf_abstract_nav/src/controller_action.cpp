@@ -45,7 +45,7 @@ namespace mbf_abstract_nav
 
 ControllerAction::ControllerAction(
     const std::string &action_name,
-    const RobotInformation &robot_info)
+    const mbf_utility::RobotInformation &robot_info)
     : AbstractActionBase(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2))
 {
 }
@@ -136,6 +136,8 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
     goal_handle.setAborted(result, result.message);
     ROS_ERROR_STREAM_NAMED(name_, result.message << " Canceling the action call.");
     controller_active = false;
+    goal_mtx_.unlock();
+    return;
   }
 
   goal_pose_ = plan.back();
@@ -330,9 +332,9 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
 }
 
 void ControllerAction::publishExePathFeedback(
-        GoalHandle& goal_handle,
+        GoalHandle &goal_handle,
         uint32_t outcome, const std::string &message,
-        const geometry_msgs::TwistStamped& current_twist)
+        const geometry_msgs::TwistStamped &current_twist)
 {
   mbf_msgs::ExePathFeedback feedback;
   feedback.outcome = outcome;
