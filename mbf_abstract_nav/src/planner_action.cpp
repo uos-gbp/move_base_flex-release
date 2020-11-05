@@ -47,7 +47,7 @@ namespace mbf_abstract_nav
 
 PlannerAction::PlannerAction(
     const std::string &name,
-    const RobotInformation &robot_info)
+    const mbf_utility::RobotInformation &robot_info)
   : AbstractActionBase(name, robot_info, boost::bind(&mbf_abstract_nav::PlannerAction::run, this, _1, _2)), path_seq_count_(0)
 {
   ros::NodeHandle private_nh("~");
@@ -269,8 +269,8 @@ bool PlannerAction::transformPlanToGlobalFrame(
   for (iter = plan.begin(); iter != plan.end(); ++iter)
   {
     geometry_msgs::PoseStamped global_pose;
-    tf_success = mbf_utility::transformPose(robot_info_.getTransformListener(), robot_info_.getGlobalFrame(), iter->header.stamp,
-                                            robot_info_.getTfTimeout(), *iter, robot_info_.getGlobalFrame(), global_pose);
+    tf_success = mbf_utility::transformPose(robot_info_.getTransformListener(), robot_info_.getGlobalFrame(),
+                                            robot_info_.getTfTimeout(), *iter, global_pose);
     if (!tf_success)
     {
       ROS_ERROR_STREAM("Can not transform pose from the \"" << iter->header.frame_id << "\" frame into the \""
