@@ -2,6 +2,10 @@
 Changelog for package move_base_flex
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2020-11-05)
+------------------
+* Add mbf_utility to move_base_flex metapackag
+
 0.3.2 (2020-05-25)
 ------------------
 
