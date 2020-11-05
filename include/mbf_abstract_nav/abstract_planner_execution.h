@@ -42,12 +42,10 @@
 #define MBF_ABSTRACT_NAV__ABSTRACT_PLANNER_EXECUTION_H_
 
 #include <map>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
 #include <geometry_msgs/PoseStamped.h>
-#include <tf/transform_listener.h>
 
 #include <mbf_abstract_core/abstract_planner.h>
 #include <mbf_utility/types.h>
@@ -61,7 +59,7 @@ namespace mbf_abstract_nav
 
 /**
  * @defgroup planner_execution Planner Execution Classes
- * @brief The planner execution classes are derived from the AbstractPlannerExecution and extends the functionality.
+ * @brief The planner execution classes are derived from the AbstractPlannerExecution and extend the functionality.
  *        The base planner execution code is located in the AbstractPlannerExecution.
  */
 
@@ -82,10 +80,12 @@ namespace mbf_abstract_nav
 
     /**
      * @brief Constructor
-     * @param condition Thread sleep condition variable, to wake up connected threads
+     * @param name Name of this execution
+     * @param planner_ptr Pointer to the planner
+     * @param config Initial configuration for this execution
      */
-    AbstractPlannerExecution(const std::string name,
-                             const mbf_abstract_core::AbstractPlanner::Ptr planner_ptr,
+    AbstractPlannerExecution(const std::string &name,
+                             const mbf_abstract_core::AbstractPlanner::Ptr &planner_ptr,
                              const MoveBaseFlexConfig &config);
 
     /**
@@ -95,22 +95,20 @@ namespace mbf_abstract_nav
 
     /**
      * @brief Returns a new plan, if one is available.
-     * @param plan A reference to a plan, which then will be filled.
-     * @param cost A reference to the costs, which then will be filled.
      */
-    std::vector<geometry_msgs::PoseStamped> getPlan();
+    std::vector<geometry_msgs::PoseStamped> getPlan() const;
 
     /**
      * @brief Returns the last time a valid plan was available.
      * @return time, the last valid plan was available.
      */
-    ros::Time getLastValidPlanTime();
+    ros::Time getLastValidPlanTime() const;
 
     /**
      * @brief Checks whether the patience was exceeded.
      * @return true, if the patience duration was exceeded.
      */
-    bool isPatienceExceeded();
+    bool isPatienceExceeded() const;
 
     /**
      * @brief Internal states
@@ -133,22 +131,22 @@ namespace mbf_abstract_nav
      * @brief Returns the current internal state
      * @return the current internal state
      */
-    PlanningState getState();
+    PlanningState getState() const;
 
     /**
      * @brief Gets planning frequency
      */
-    double getFrequency() { return frequency_; };
+    double getFrequency() const { return frequency_; };
 
     /**
      * @brief Gets computed costs
      * @return The costs of the computed path
      */
-    double getCost();
+    double getCost() const;
 
     /**
-     * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the
-     * computation takes too much time.
+     * @brief Cancel the planner execution. This calls the cancel method of the planner plugin.
+     * This could be useful if the computation takes too much time, or if we are aborting the navigation.
      * @return true, if the planner plugin tries / tried to cancel the planning step.
      */
     virtual bool cancel();
@@ -194,7 +192,7 @@ namespace mbf_abstract_nav
 
   protected:
 
-    //! the local planer to calculate the velocity command
+    //! the local planer to calculate the robot trajectory
     mbf_abstract_core::AbstractPlanner::Ptr planner_;
 
     //! the name of the loaded planner plugin
@@ -229,20 +227,24 @@ namespace mbf_abstract_nav
     /**
      * @brief Sets the internal state, thread communication safe
      * @param state the current state
+     * @param signalling set true to trigger the condition-variable for state-update
      */
-    void setState(PlanningState state);
+    void setState(PlanningState state, bool signalling);
 
     //! mutex to handle safe thread communication for the current state
-    boost::mutex state_mtx_;
+    mutable boost::mutex state_mtx_;
 
     //! mutex to handle safe thread communication for the plan and plan-costs
-    boost::mutex plan_mtx_;
+    mutable boost::mutex plan_mtx_;
 
     //! mutex to handle safe thread communication for the goal and start pose.
-    boost::mutex goal_start_mtx_;
+    mutable boost::mutex goal_start_mtx_;
 
     //! mutex to handle safe thread communication for the planning_ flag.
-    boost::mutex planning_mtx_;
+    mutable boost::mutex planning_mtx_;
+
+    //! dynamic reconfigure mutex for a thread safe communication
+    mutable boost::mutex configuration_mutex_;
 
     //! true, if a new goal pose has been set, until it is used.
     bool has_new_goal_;
@@ -294,9 +296,6 @@ namespace mbf_abstract_nav
 
     //! current internal state
     PlanningState state_;
-
-    //! dynamic reconfigure mutex for a thread safe communication
-    boost::mutex configuration_mutex_;
 
   };
 
