@@ -41,11 +41,13 @@
 #ifndef MBF_ABSTRACT_NAV__CONTROLLER_ACTION_H_
 #define MBF_ABSTRACT_NAV__CONTROLLER_ACTION_H_
 
+#include <actionlib/server/action_server.h>
+
+#include <mbf_msgs/ExePathAction.h>
+#include <mbf_utility/robot_information.h>
+
 #include "mbf_abstract_nav/abstract_action_base.hpp"
 #include "mbf_abstract_nav/abstract_controller_execution.h"
-#include "mbf_abstract_nav/robot_information.h"
-#include <actionlib/server/action_server.h>
-#include <mbf_msgs/ExePathAction.h>
 
 namespace mbf_abstract_nav
 {
@@ -58,7 +60,7 @@ class ControllerAction :
   typedef boost::shared_ptr<ControllerAction> Ptr;
 
   ControllerAction(const std::string &name,
-                   const RobotInformation &robot_info);
+                   const mbf_utility::RobotInformation &robot_info);
 
   /**
    * @brief Start controller action.
@@ -75,9 +77,9 @@ class ControllerAction :
 
 protected:
   void publishExePathFeedback(
-          GoalHandle& goal_handle,
+          GoalHandle &goal_handle,
           uint32_t outcome, const std::string &message,
-          const geometry_msgs::TwistStamped& current_twist);
+          const geometry_msgs::TwistStamped &current_twist);
 
   /**
    * @brief Utility method to fill the ExePath action result in a single line
