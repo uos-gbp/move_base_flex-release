@@ -43,15 +43,16 @@
 namespace mbf_abstract_nav
 {
 
-RecoveryAction::RecoveryAction(const std::string &name, const RobotInformation &robot_info)
+RecoveryAction::RecoveryAction(const std::string &name, const mbf_utility::RobotInformation &robot_info)
   : AbstractActionBase(name, robot_info, boost::bind(&mbf_abstract_nav::RecoveryAction::run, this, _1, _2)){}
 
 void RecoveryAction::run(GoalHandle &goal_handle, AbstractRecoveryExecution &execution)
 {
   ROS_DEBUG_STREAM_NAMED(name_, "Start action "  << name_);
 
-  const mbf_msgs::RecoveryGoal &goal = *(goal_handle.getGoal().get());
+  const mbf_msgs::RecoveryGoal &goal = *goal_handle.getGoal();
   mbf_msgs::RecoveryResult result;
+  result.used_plugin = goal.behavior;
   bool recovery_active = true;
 
   typename AbstractRecoveryExecution::RecoveryState state_recovery_input;

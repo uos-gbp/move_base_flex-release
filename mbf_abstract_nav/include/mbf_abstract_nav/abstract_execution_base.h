@@ -39,10 +39,11 @@
 #ifndef MBF_ABSTRACT_NAV__ABSTRACT_EXECUTION_BASE_H_
 #define MBF_ABSTRACT_NAV__ABSTRACT_EXECUTION_BASE_H_
 
-#include <mbf_abstract_nav/MoveBaseFlexConfig.h>
 #include <boost/thread.hpp>
 #include <boost/chrono/duration.hpp>
 #include <boost/chrono/thread_clock.hpp>
+
+#include <mbf_abstract_nav/MoveBaseFlexConfig.h>
 
 namespace mbf_abstract_nav
 {
@@ -65,7 +66,7 @@ class AbstractExecutionBase
 
   void join();
 
-  void waitForStateUpdate(boost::chrono::microseconds const &duration);
+  boost::cv_status waitForStateUpdate(boost::chrono::microseconds const &duration);
 
   /**
    * @brief Gets the current plugin execution outcome
