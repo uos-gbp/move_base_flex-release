@@ -38,8 +38,9 @@
  *
  */
 
-#include "mbf_abstract_nav/abstract_controller_execution.h"
 #include <mbf_msgs/ExePathResult.h>
+
+#include "mbf_abstract_nav/abstract_controller_execution.h"
 
 namespace mbf_abstract_nav
 {
@@ -47,10 +48,10 @@ namespace mbf_abstract_nav
 const double AbstractControllerExecution::DEFAULT_CONTROLLER_FREQUENCY = 100.0; // 100 Hz
 
 AbstractControllerExecution::AbstractControllerExecution(
-    const std::string name,
-    const mbf_abstract_core::AbstractController::Ptr& controller_ptr,
-    const ros::Publisher& vel_pub,
-    const ros::Publisher& goal_pub,
+    const std::string &name,
+    const mbf_abstract_core::AbstractController::Ptr &controller_ptr,
+    const ros::Publisher &vel_pub,
+    const ros::Publisher &goal_pub,
     const TFPtr &tf_listener_ptr,
     const MoveBaseFlexConfig &config) :
   AbstractExecutionBase(name),
@@ -168,14 +169,11 @@ std::vector<geometry_msgs::PoseStamped> AbstractControllerExecution::getNewPlan(
 
 bool AbstractControllerExecution::computeRobotPose()
 {
-  bool tf_success = mbf_utility::getRobotPose(*tf_listener_ptr, robot_frame_, global_frame_,
-                                              ros::Duration(tf_timeout_), robot_pose_);
-  // would be 0 if not, as we ask tf listener for the last pose available
-  robot_pose_.header.stamp = ros::Time::now();
-  if (!tf_success)
+  if (!mbf_utility::getRobotPose(*tf_listener_ptr, robot_frame_, global_frame_,
+                                 ros::Duration(tf_timeout_), robot_pose_))
   {
     ROS_ERROR_STREAM("Could not get the robot pose in the global frame. - robot frame: \""
-                         << robot_frame_ << "\"   global frame: \"" << global_frame_ << std::endl);
+                         << robot_frame_ << "\"   global frame: \"" << global_frame_);
     message_ = "Could not get the robot pose";
     outcome_ = mbf_msgs::ExePathResult::TF_ERROR;
     return false;
@@ -184,10 +182,10 @@ bool AbstractControllerExecution::computeRobotPose()
 }
 
 
-uint32_t AbstractControllerExecution::computeVelocityCmd(const geometry_msgs::PoseStamped& robot_pose,
-                                                         const geometry_msgs::TwistStamped& robot_velocity,
-                                                         geometry_msgs::TwistStamped& vel_cmd,
-                                                         std::string& message)
+uint32_t AbstractControllerExecution::computeVelocityCmd(const geometry_msgs::PoseStamped &robot_pose,
+                                                         const geometry_msgs::TwistStamped &robot_velocity,
+                                                         geometry_msgs::TwistStamped &vel_cmd,
+                                                         std::string &message)
 {
   return controller_->computeVelocityCommands(robot_pose, robot_velocity, vel_cmd, message);
 }
@@ -262,14 +260,20 @@ bool AbstractControllerExecution::reachedGoalCheck()
 
 bool AbstractControllerExecution::cancel()
 {
-  // returns false if cancel is not implemented or rejected by the recovery behavior (will run until completion)
-  bool ctrl_cancelled = controller_->cancel();
-  if (!ctrl_cancelled)
+  // request the controller to cancel; it returns false if cancel is not implemented or rejected by the plugin
+  if (!controller_->cancel())
   {
     ROS_WARN_STREAM("Cancel controlling failed. Wait until the current control cycle finished!");
   }
+  // then wait for the control cycle to stop (should happen immediately if the controller cancel returned true)
   cancel_ = true;
-  return ctrl_cancelled;
+  if (waitForStateUpdate(boost::chrono::milliseconds(500)) == boost::cv_status::timeout)
+  {
+    // this situation should never happen; if it does, the action server will be unready for goals immediately sent
+    ROS_WARN_STREAM("Timeout while waiting for control cycle to stop; immediately sent goals can get stuck");
+    return false;
+  }
+  return true;
 }
 
 
@@ -298,7 +302,8 @@ void AbstractControllerExecution::run()
 
       if (cancel_)
       {
-        if (force_stop_on_cancel_) {
+        if (force_stop_on_cancel_)
+        {
           publishZeroVelocity(); // command the robot to stop on canceling navigation
         }
         setState(CANCELED);
@@ -341,13 +346,21 @@ void AbstractControllerExecution::run()
       }
 
       // compute robot pose and store it in robot_pose_
-      computeRobotPose();
+      if (!computeRobotPose())
+      {
+        publishZeroVelocity();
+        setState(INTERNAL_ERROR);
+        condition_.notify_all();
+        moving_ = false;
+        return;
+      }
 
       // ask planner if the goal is reached
       if (reachedGoalCheck())
       {
         ROS_DEBUG_STREAM_NAMED("abstract_controller_execution", "Reached the goal!");
-        if (force_stop_at_goal_) {
+        if (force_stop_at_goal_)
+        {
           publishZeroVelocity();
         }
         setState(ARRIVED_GOAL);

@@ -36,10 +36,10 @@
  *
  */
 
-#include "mbf_abstract_nav/robot_information.h"
+#include "mbf_utility/robot_information.h"
 #include "mbf_utility/navigation_utility.h"
 
-namespace mbf_abstract_nav
+namespace mbf_utility
 {
 
 RobotInformation::RobotInformation(TF &tf_listener,
@@ -56,7 +56,6 @@ bool RobotInformation::getRobotPose(geometry_msgs::PoseStamped &robot_pose) cons
 {
   bool tf_success = mbf_utility::getRobotPose(tf_listener_, robot_frame_, global_frame_,
                                               ros::Duration(tf_timeout_), robot_pose);
-  robot_pose.header.stamp = ros::Time::now(); // would be 0 if not, as we ask tf listener for the last pose available
   if (!tf_success)
   {
     ROS_ERROR_STREAM("Can not get the robot pose in the global frame. - robot frame: \""
@@ -80,4 +79,4 @@ const TF& RobotInformation::getTransformListener() const {return tf_listener_;};
 
 const ros::Duration& RobotInformation::getTfTimeout() const {return tf_timeout_;}
 
-} /* namespace mbf_abstract_nav */
+} /* namespace mbf_utility */

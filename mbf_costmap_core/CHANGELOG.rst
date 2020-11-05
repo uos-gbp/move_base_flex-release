@@ -2,6 +2,10 @@
 Changelog for package mbf_costmap_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2020-11-05)
+------------------
+* Fix reference to TF is ambiguous, see #221
+
 0.3.2 (2020-05-25)
 ------------------
 
