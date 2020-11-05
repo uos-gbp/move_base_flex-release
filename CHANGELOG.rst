@@ -2,6 +2,12 @@
 Changelog for package mbf_utility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2020-11-05)
+------------------
+* fix controller fails if robot pose gets older than tf_timeout
+* Make reference symbol position consistent across the project
+* Move RobotInformation to mbf_utility, as it can be used generally
+
 0.3.2 (2020-05-25)
 ------------------
 * Remove dependency on base_local_planner and move FootprintHelper class to mbf_costmap_nav and make it static
