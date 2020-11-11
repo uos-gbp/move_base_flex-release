@@ -43,10 +43,7 @@
 
 #include <map>
 #include <string>
-#include <stdint.h>
 #include <vector>
-
-#include <tf/transform_listener.h>
 
 #include <mbf_abstract_core/abstract_recovery.h>
 #include <mbf_utility/types.h>
@@ -85,8 +82,8 @@ namespace mbf_abstract_nav
      * @param condition Thread sleep condition variable, to wake up connected threads
      * @param tf_listener_ptr Shared pointer to a common tf listener
      */
-    AbstractRecoveryExecution(const std::string name,
-                              const mbf_abstract_core::AbstractRecovery::Ptr recovery_ptr,
+    AbstractRecoveryExecution(const std::string &name,
+                              const mbf_abstract_core::AbstractRecovery::Ptr &recovery_ptr,
                               const TFPtr &tf_listener_ptr,
                               const MoveBaseFlexConfig &config);
 
@@ -102,8 +99,8 @@ namespace mbf_abstract_nav
     bool isPatienceExceeded();
 
     /**
-     * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the
-     * computation takes too much time.
+     * @brief Cancel the planner execution. This calls the cancel method of the planner plugin.
+     * This could be useful if the computation takes too much time, or if we are aborting the navigation.
      * @return true, if the planner plugin tries / tried to cancel the planning step.
      */
     virtual bool cancel();
