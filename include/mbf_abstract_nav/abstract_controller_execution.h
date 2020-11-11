@@ -42,11 +42,9 @@
 #define MBF_ABSTRACT_NAV__ABSTRACT_CONTROLLER_EXECUTION_H_
 
 #include <map>
-#include <stdint.h>
 #include <string>
 #include <vector>
 
-#include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 
@@ -89,10 +87,10 @@ namespace mbf_abstract_nav
      * @param tf_listener_ptr Shared pointer to a common tf listener
      */
     AbstractControllerExecution(
-        const std::string name,
-        const mbf_abstract_core::AbstractController::Ptr& controller_ptr,
-        const ros::Publisher& vel_pub,
-        const ros::Publisher& goal_pub,
+        const std::string &name,
+        const mbf_abstract_core::AbstractController::Ptr &controller_ptr,
+        const ros::Publisher &vel_pub,
+        const ros::Publisher &goal_pub,
         const TFPtr &tf_listener_ptr,
         const MoveBaseFlexConfig &config);
 
@@ -121,9 +119,10 @@ namespace mbf_abstract_nav
       double action_angle_tolerance = 3.1415);
 
     /**
-     * @brief Cancel the planner execution. This calls the cancel method of the planner plugin. This could be useful if the
-     * computation takes too much time.
-     * @return true, if the planner plugin tries / tried to cancel the planning step.
+     * @brief Cancel the controller execution.
+     * This calls the cancel method of the controller plugin, sets the cancel_ flag to true,
+     * and waits for the control loop to stop. Normally called upon aborting the navigation.
+     * @return true, if the control loop stops within a cycle time.
      */
     virtual bool cancel();
 
@@ -206,9 +205,9 @@ namespace mbf_abstract_nav
      * @param message Optional more detailed outcome as a string.
      * @return Result code as described on ExePath action result and plugin's header.
      */
-    virtual uint32_t computeVelocityCmd(const geometry_msgs::PoseStamped& pose,
-                                        const geometry_msgs::TwistStamped& velocity,
-                                        geometry_msgs::TwistStamped& vel_cmd, std::string& message);
+    virtual uint32_t computeVelocityCmd(const geometry_msgs::PoseStamped &pose,
+                                        const geometry_msgs::TwistStamped &velocity,
+                                        geometry_msgs::TwistStamped &vel_cmd, std::string &message);
 
     /**
      * @brief Sets the velocity command, to make it available for another thread
