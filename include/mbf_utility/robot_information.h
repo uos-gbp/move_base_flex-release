@@ -30,31 +30,66 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  abstract_planner.h
+ *  robot_information.h
  *
- *  author: Jannik Abbenseth <jba@ipa.fhg.de>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  *
  */
 
-#ifndef MBF_UTILITY__TYPES_H_
-#define MBF_UTILITY__TYPES_H_
+#ifndef MBF_UTILITY__ROBOT_INFORMATION_H_
+#define MBF_UTILITY__ROBOT_INFORMATION_H_
 
 #include <boost/shared_ptr.hpp>
-#include <ros/common.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TwistStamped.h>
+#include <ros/duration.h>
+#include <string>
 
-#if ROS_VERSION_MINIMUM (1, 14, 0) // if current ros version is >= 1.14.0
-  // Melodic uses TF2
-  #include <tf2_ros/buffer.h>
-  typedef boost::shared_ptr<tf2_ros::Buffer> TFPtr;
-  typedef tf2_ros::Buffer TF;
-  typedef tf2::TransformException TFException;
-#else
-  // Previous versions still using TF
-  #define USE_OLD_TF
-  #include <tf/transform_listener.h>
-  typedef boost::shared_ptr<tf::TransformListener> TFPtr;
-  typedef tf::TransformListener TF;
-  typedef tf::TransformException TFException;
-#endif
+#include "mbf_utility/types.h"
 
-#endif
+namespace mbf_utility
+{
+
+class RobotInformation
+{
+ public:
+
+  typedef boost::shared_ptr<RobotInformation> Ptr;
+
+  RobotInformation(
+      TF &tf_listener,
+      const std::string &global_frame,
+      const std::string &robot_frame,
+      const ros::Duration &tf_timeout);
+
+  /**
+   * @brief Computes the current robot pose (robot_frame_) in the global frame (global_frame_).
+   * @param robot_pose Reference to the robot_pose message object to be filled.
+   * @return true, if the current robot pose could be computed, false otherwise.
+   */
+  bool getRobotPose(geometry_msgs::PoseStamped &robot_pose) const;
+
+  bool getRobotVelocity(geometry_msgs::TwistStamped &robot_velocity, ros::Duration look_back_duration) const;
+
+  const std::string& getGlobalFrame() const;
+
+  const std::string& getRobotFrame() const;
+
+  const TF& getTransformListener() const;
+
+  const ros::Duration& getTfTimeout() const;
+
+ private:
+  const TF& tf_listener_;
+
+  const std::string &global_frame_;
+
+  const std::string &robot_frame_;
+
+  const ros::Duration &tf_timeout_;
+
+};
+
+} /* mbf_utility */
+
+#endif /* MBF_UTILITY__ROBOT_INFORMATION_H_ */
