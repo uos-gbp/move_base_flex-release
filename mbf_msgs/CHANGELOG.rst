@@ -2,6 +2,9 @@
 Changelog for package mbf_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.3 (2020-11-05)
+------------------
+
 0.3.2 (2020-05-25)
 ------------------
 * add impassable outcome code for recovery behaviors
