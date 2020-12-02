@@ -2,6 +2,9 @@
 Changelog for package mbf_utility
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.3.4 (2020-12-02)
+------------------
+
 0.3.3 (2020-11-05)
 ------------------
 * fix controller fails if robot pose gets older than tf_timeout
