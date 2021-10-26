@@ -87,3 +87,31 @@ install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+
+  # gtests
+  catkin_add_gtest(${MBF_ABSTRACT_SERVER_LIB}_gtest test/abstract_execution_base.cpp)
+  target_link_libraries(${MBF_ABSTRACT_SERVER_LIB}_gtest ${MBF_ABSTRACT_SERVER_LIB})
+  
+  # ros-tests
+  add_rostest_gmock(abstract_action_base_test
+    test/abstract_action_base.launch
+    test/abstract_action_base.cpp)
+  target_link_libraries(abstract_action_base_test ${MBF_ABSTRACT_SERVER_LIB})
+
+  add_rostest_gmock(abstract_controller_execution_test
+    test/abstract_controller_execution.launch
+    test/abstract_controller_execution.cpp)
+  target_link_libraries(abstract_controller_execution_test ${MBF_ABSTRACT_SERVER_LIB})
+
+  add_rostest_gmock(abstract_planner_execution_test
+    test/abstract_planner_execution.launch
+    test/abstract_planner_execution.cpp)
+  target_link_libraries(abstract_planner_execution_test ${MBF_ABSTRACT_SERVER_LIB})
+
+  add_rostest_gmock(planner_action_test
+    test/planner_action.launch
+    test/planner_action.cpp)
+  target_link_libraries(planner_action_test ${MBF_ABSTRACT_SERVER_LIB})
+endif()
