@@ -40,14 +40,29 @@
 
 namespace mbf_abstract_nav
 {
-
-AbstractExecutionBase::AbstractExecutionBase(std::string name)
-  : outcome_(255), cancel_(false), name_(name)
+AbstractExecutionBase::AbstractExecutionBase(const std::string& name) : outcome_(255), cancel_(false), name_(name)
 {
+}
+
+AbstractExecutionBase::~AbstractExecutionBase()
+{
+  if (thread_.joinable())
+  {
+    // if the user forgets to call stop(), we have to kill it
+    stop();
+    thread_.join();
+  }
 }
 
 bool AbstractExecutionBase::start()
 {
+  if (thread_.joinable())
+  {
+    // if the user forgets to call stop(), we have to kill it
+    stop();
+    thread_.join();
+  }
+
   thread_ = boost::thread(&AbstractExecutionBase::run, this);
   return true;
 }
@@ -58,29 +73,30 @@ void AbstractExecutionBase::stop()
   thread_.interrupt();
 }
 
-void AbstractExecutionBase::join(){
+void AbstractExecutionBase::join()
+{
   if (thread_.joinable())
     thread_.join();
 }
 
-boost::cv_status AbstractExecutionBase::waitForStateUpdate(boost::chrono::microseconds const &duration)
+boost::cv_status AbstractExecutionBase::waitForStateUpdate(boost::chrono::microseconds const& duration)
 {
   boost::mutex mutex;
   boost::unique_lock<boost::mutex> lock(mutex);
   return condition_.wait_for(lock, duration);
 }
 
-uint32_t AbstractExecutionBase::getOutcome()
+uint32_t AbstractExecutionBase::getOutcome() const
 {
   return outcome_;
 }
 
-std::string AbstractExecutionBase::getMessage()
+const std::string& AbstractExecutionBase::getMessage() const
 {
   return message_;
 }
 
-std::string AbstractExecutionBase::getName()
+const std::string& AbstractExecutionBase::getName() const
 {
   return name_;
 }
