@@ -46,7 +46,7 @@ namespace mbf_abstract_nav
 ControllerAction::ControllerAction(
     const std::string &action_name,
     const mbf_utility::RobotInformation &robot_info)
-    : AbstractActionBase(action_name, robot_info, boost::bind(&mbf_abstract_nav::ControllerAction::run, this, _1, _2))
+    : AbstractActionBase(action_name, robot_info)
 {
 }
 
@@ -98,7 +98,7 @@ void ControllerAction::start(
   }
 }
 
-void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution &execution)
+void ControllerAction::runImpl(GoalHandle &goal_handle, AbstractControllerExecution &execution)
 {
   goal_mtx_.lock();
   // Note that we always use the goal handle stored on the concurrency slots map, as it can change when replanning
@@ -257,7 +257,17 @@ void ControllerAction::run(GoalHandle &goal_handle, AbstractControllerExecution 
       case AbstractControllerExecution::NO_LOCAL_CMD:
         ROS_WARN_STREAM_THROTTLE_NAMED(3, name_, "No velocity command received from controller! "
             << execution.getMessage());
-        publishExePathFeedback(goal_handle, execution.getOutcome(), execution.getMessage(), execution.getVelocityCmd());
+        controller_active = execution.isMoving();
+        if (!controller_active)
+        {
+          fillExePathResult(execution.getOutcome(), execution.getMessage(), result);
+          goal_handle.setAborted(result, result.message);
+        }
+        else
+        {
+          publishExePathFeedback(goal_handle, execution.getOutcome(), execution.getMessage(),
+                                 execution.getVelocityCmd());
+        }
         break;
 
       case AbstractControllerExecution::GOT_LOCAL_CMD:
