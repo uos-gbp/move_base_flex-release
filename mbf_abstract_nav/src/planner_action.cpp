@@ -48,14 +48,14 @@ namespace mbf_abstract_nav
 PlannerAction::PlannerAction(
     const std::string &name,
     const mbf_utility::RobotInformation &robot_info)
-  : AbstractActionBase(name, robot_info, boost::bind(&mbf_abstract_nav::PlannerAction::run, this, _1, _2)), path_seq_count_(0)
+  : AbstractActionBase(name, robot_info), path_seq_count_(0)
 {
   ros::NodeHandle private_nh("~");
   // informative topics: current navigation goal
   current_goal_pub_ = private_nh.advertise<geometry_msgs::PoseStamped>("current_goal", 1);
 }
 
-void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execution)
+void PlannerAction::runImpl(GoalHandle &goal_handle, AbstractPlannerExecution &execution)
 {
   const mbf_msgs::GetPathGoal& goal = *(goal_handle.getGoal().get());
 
@@ -244,8 +244,6 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
       // try to sleep a bit
       // normally this thread should be woken up from the planner execution thread
       // in order to transfer the results to the controller.
-      boost::mutex mutex;
-      boost::unique_lock<boost::mutex> lock(mutex);
       execution.waitForStateUpdate(boost::chrono::milliseconds(500));
     }
   }  // while (planner_active && ros::ok())
@@ -260,11 +258,12 @@ void PlannerAction::run(GoalHandle &goal_handle, AbstractPlannerExecution &execu
   }
 }
 
-bool PlannerAction::transformPlanToGlobalFrame(
-    std::vector<geometry_msgs::PoseStamped> &plan, std::vector<geometry_msgs::PoseStamped> &global_plan)
+bool PlannerAction::transformPlanToGlobalFrame(const std::vector<geometry_msgs::PoseStamped>& plan,
+                                               std::vector<geometry_msgs::PoseStamped>& global_plan)
 {
   global_plan.clear();
-  std::vector<geometry_msgs::PoseStamped>::iterator iter;
+  global_plan.reserve(plan.size());
+  std::vector<geometry_msgs::PoseStamped>::const_iterator iter;
   bool tf_success = false;
   for (iter = plan.begin(); iter != plan.end(); ++iter)
   {
