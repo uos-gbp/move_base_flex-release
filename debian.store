@@ -1,1 +1,1 @@
-{"trim": "", "base": "02ba6d2a", "trimbase": "", "parent": "debian/noetic/mbf_costmap_core", "previous": "4781b99c"}
+{"base": "4525f3d5", "parent": "debian/noetic/mbf_costmap_core", "previous": "de299053", "trim": "", "trimbase": ""}
