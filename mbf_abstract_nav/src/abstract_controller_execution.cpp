@@ -57,7 +57,7 @@ AbstractControllerExecution::AbstractControllerExecution(
   AbstractExecutionBase(name),
     controller_(controller_ptr), tf_listener_ptr(tf_listener_ptr), state_(INITIALIZED),
     moving_(false), max_retries_(0), patience_(0), vel_pub_(vel_pub), current_goal_pub_(goal_pub),
-    calling_duration_(boost::chrono::microseconds(static_cast<int>(1e6 / DEFAULT_CONTROLLER_FREQUENCY)))
+    loop_rate_(DEFAULT_CONTROLLER_FREQUENCY)
 {
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
@@ -88,7 +88,7 @@ bool AbstractControllerExecution::setControllerFrequency(double frequency)
     ROS_ERROR("Controller frequency must be greater than 0.0! No change of the frequency!");
     return false;
   }
-  calling_duration_ = boost::chrono::microseconds(static_cast<int>(1e6 / frequency));
+  loop_rate_ = ros::Rate(frequency);
   return true;
 }
 
@@ -123,9 +123,7 @@ void AbstractControllerExecution::setState(ControllerState state)
   state_ = state;
 }
 
-
-typename AbstractControllerExecution::ControllerState
-AbstractControllerExecution::getState()
+typename AbstractControllerExecution::ControllerState AbstractControllerExecution::getState() const
 {
   boost::lock_guard<boost::mutex> guard(state_mtx_);
   return state_;
@@ -202,22 +200,19 @@ void AbstractControllerExecution::setVelocityCmd(const geometry_msgs::TwistStamp
   // TODO so there should be no loss of information in the feedback stream
 }
 
-
-geometry_msgs::TwistStamped AbstractControllerExecution::getVelocityCmd()
+geometry_msgs::TwistStamped AbstractControllerExecution::getVelocityCmd() const
 {
   boost::lock_guard<boost::mutex> guard(vel_cmd_mtx_);
   return vel_cmd_stamped_;
 }
 
-
-ros::Time AbstractControllerExecution::getLastPluginCallTime()
+ros::Time AbstractControllerExecution::getLastPluginCallTime() const
 {
   boost::lock_guard<boost::mutex> guard(lct_mtx_);
   return last_call_time_;
 }
 
-
-bool AbstractControllerExecution::isPatienceExceeded()
+bool AbstractControllerExecution::isPatienceExceeded() const
 {
   boost::lock_guard<boost::mutex> guard(lct_mtx_);
   if(!patience_.isZero() && ros::Time::now() - start_time_ > patience_) // not zero -> activated, start_time handles init case
@@ -236,8 +231,7 @@ bool AbstractControllerExecution::isPatienceExceeded()
   return false;
 }
 
-
-bool AbstractControllerExecution::isMoving()
+bool AbstractControllerExecution::isMoving() const
 {
   return moving_;
 }
@@ -260,18 +254,24 @@ bool AbstractControllerExecution::reachedGoalCheck()
 
 bool AbstractControllerExecution::cancel()
 {
-  // request the controller to cancel; it returns false if cancel is not implemented or rejected by the plugin
-  if (!controller_->cancel())
+  // Request the controller to cancel; it will return true if it takes care of stopping, returning CANCELED on
+  // computeVelocityCmd when done. This allows for smooth, controlled stops.
+  // If false (meaning cancel is not implemented, or that the controller defers handling it) MBF will take care.
+  if (controller_->cancel())
   {
-    ROS_WARN_STREAM("Cancel controlling failed. Wait until the current control cycle finished!");
+    ROS_INFO("Controller will take care of stopping");
   }
-  // then wait for the control cycle to stop (should happen immediately if the controller cancel returned true)
-  cancel_ = true;
-  if (waitForStateUpdate(boost::chrono::milliseconds(500)) == boost::cv_status::timeout)
+  else
   {
-    // this situation should never happen; if it does, the action server will be unready for goals immediately sent
-    ROS_WARN_STREAM("Timeout while waiting for control cycle to stop; immediately sent goals can get stuck");
-    return false;
+    ROS_WARN("Controller defers handling cancel; force it and wait until the current control cycle finished");
+    cancel_ = true;
+    // wait for the control cycle to stop
+    if (waitForStateUpdate(boost::chrono::milliseconds(500)) == boost::cv_status::timeout)
+    {
+      // this situation should never happen; if it does, the action server will be unready for goals immediately sent
+      ROS_WARN_STREAM("Timeout while waiting for control cycle to stop; immediately sent goals can get stuck");
+      return false;
+    }
   }
   return true;
 }
@@ -298,8 +298,6 @@ void AbstractControllerExecution::run()
   {
     while (moving_ && ros::ok())
     {
-      boost::chrono::thread_clock::time_point loop_start_time = boost::chrono::thread_clock::now();
-
       if (cancel_)
       {
         if (force_stop_on_cancel_)
@@ -307,8 +305,8 @@ void AbstractControllerExecution::run()
           publishZeroVelocity(); // command the robot to stop on canceling navigation
         }
         setState(CANCELED);
-        condition_.notify_all();
         moving_ = false;
+        condition_.notify_all();
         return;
       }
 
@@ -317,7 +315,7 @@ void AbstractControllerExecution::run()
         // the specific implementation must have detected a risk situation; at this abstract level, we
         // cannot tell what the problem is, but anyway we command the robot to stop to avoid crashes
         publishZeroVelocity();   // note that we still feedback command calculated by the plugin
-        boost::this_thread::sleep_for(calling_duration_);
+        loop_rate_.sleep();
       }
 
       // update plan dynamically
@@ -329,8 +327,8 @@ void AbstractControllerExecution::run()
         if (plan.empty())
         {
           setState(EMPTY_PLAN);
-          condition_.notify_all();
           moving_ = false;
+          condition_.notify_all();
           return;
         }
 
@@ -338,8 +336,8 @@ void AbstractControllerExecution::run()
         if (!controller_->setPlan(plan))
         {
           setState(INVALID_PLAN);
-          condition_.notify_all();
           moving_ = false;
+          condition_.notify_all();
           return;
         }
         current_goal_pub_.publish(plan.back());
@@ -350,8 +348,8 @@ void AbstractControllerExecution::run()
       {
         publishZeroVelocity();
         setState(INTERNAL_ERROR);
-        condition_.notify_all();
         moving_ = false;
+        condition_.notify_all();
         return;
       }
 
@@ -365,8 +363,8 @@ void AbstractControllerExecution::run()
         }
         setState(ARRIVED_GOAL);
         // goal reached, tell it the controller
-        condition_.notify_all();
         moving_ = false;
+        condition_.notify_all();
         // if not, keep moving
       }
       else
@@ -390,10 +388,16 @@ void AbstractControllerExecution::run()
           last_valid_cmd_time_ = ros::Time::now();
           retries = 0;
         }
+        else if (outcome_ == mbf_msgs::ExePathResult::CANCELED)
+        {
+          ROS_INFO_STREAM("Controller-handled cancel completed");
+          cancel_ = true;
+          continue;
+        }
         else
         {
           boost::lock_guard<boost::mutex> guard(configuration_mutex_);
-          if (max_retries_ >= 0 && ++retries > max_retries_)
+          if (max_retries_ > 0 && ++retries > max_retries_)
           {
             setState(MAX_RETRIES);
             moving_ = false;
@@ -407,6 +411,8 @@ void AbstractControllerExecution::run()
           else
           {
             setState(NO_LOCAL_CMD); // useful for server feedback
+            // we keep on moving if we have retries left or if the user has granted us some patience.
+            moving_ = max_retries_ || !patience_.isZero();
           }
           // could not compute a valid velocity command -> stop moving the robot
           publishZeroVelocity(); // command the robot to stop; we still feedback command calculated by the plugin
@@ -418,26 +424,16 @@ void AbstractControllerExecution::run()
         condition_.notify_all();
       }
 
-      boost::chrono::thread_clock::time_point end_time = boost::chrono::thread_clock::now();
-      boost::chrono::microseconds execution_duration =
-          boost::chrono::duration_cast<boost::chrono::microseconds>(end_time - loop_start_time);
-      configuration_mutex_.lock();
-      boost::chrono::microseconds sleep_time = calling_duration_ - execution_duration;
-      configuration_mutex_.unlock();
-      if (moving_ && ros::ok())
+      if (moving_)
       {
-        if (sleep_time > boost::chrono::microseconds(0))
+        // The nanosleep used by ROS time is not interruptable, therefore providing an interrupt point before and after
+        boost::this_thread::interruption_point();
+        if (!loop_rate_.sleep())
         {
-          // interruption point
-          boost::this_thread::sleep_for(sleep_time);
+          ROS_WARN_THROTTLE(1.0, "Calculation needs too much time to stay in the moving frequency! (%.4fs > %.4fs)",
+                            loop_rate_.cycleTime().toSec(), loop_rate_.expectedCycleTime().toSec());
         }
-        else
-        {
-          // provide an interruption point also with 0 or negative sleep_time
-          boost::this_thread::interruption_point();
-          ROS_WARN_THROTTLE(1.0, "Calculation needs too much time to stay in the moving frequency! (%f > %f)",
-                            execution_duration.count()/1000000.0, calling_duration_.count()/1000000.0);
-        }
+        boost::this_thread::interruption_point();
       }
     }
   }
@@ -456,6 +452,8 @@ void AbstractControllerExecution::run()
     message_ = "Unknown error occurred: " + boost::current_exception_diagnostic_information();
     ROS_FATAL_STREAM(message_);
     setState(INTERNAL_ERROR);
+    moving_ = false;
+    condition_.notify_all();
   }
 }
 
